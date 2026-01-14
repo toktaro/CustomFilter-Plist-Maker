@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CustomFilter Plist Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            background: #222;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #444;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: #fff;
+            color: #222;
+            border: 1px solid #222;
+        }
+
+        button.secondary:hover {
+            background: #f0f0f0;
+        }
+
+        button.small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        button.danger {
+            background: #888;
+        }
+
+        button.danger:hover {
+            background: #666;
+        }
+
+        .section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section h2 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        /* Filter List */
+        .filter-list {
+            background: #fff;
+            border: 1px solid #ddd;
+            min-height: 80px;
+        }
+
+        .filter-list-empty {
+            color: #aaa;
+            font-size: 0.875rem;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #eee;
+            background: #fff;
+            transition: background 0.2s;
+        }
+
+        .filter-item:last-child {
+            border-bottom: none;
+        }
+
+        .filter-item.selected {
+            background: #f0f0f0;
+        }
+
+        .filter-item.dragging {
+            opacity: 0.5;
+            background: #e0e0e0;
+        }
+
+        .filter-item.drag-over {
+            border-top: 2px solid #222;
+        }
+
+        .filter-handle {
+            cursor: grab;
+            padding: 0.25rem;
+            margin-right: 0.75rem;
+            color: #999;
+            font-size: 1rem;
+        }
+
+        .filter-handle:active {
+            cursor: grabbing;
+        }
+
+        .filter-info {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .filter-name {
+            font-weight: 500;
+            margin-bottom: 0.125rem;
+        }
+
+        .filter-count {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .input-section.hidden {
+            display: none;
+        }
+
+        .drop-zone {
+            border: 2px dashed #ccc;
+            padding: 1.5rem;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+        }
+
+        .drop-zone.dragover {
+            border-color: #222;
+            background: #f0f0f0;
+        }
+
+        .drop-zone p {
+            color: #888;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .drop-zone small {
+            color: #aaa;
+            font-size: 0.75rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #222;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        /* Character Grid */
+        .char-section {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 1rem;
+        }
+
+        .char-section.hidden {
+            display: none;
+        }
+
+        .char-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .char-section-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .char-section-title span {
+            color: #222;
+            font-weight: 600;
+        }
+
+        .char-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 100px;
+            background: #fafafa;
+            padding: 1rem;
+            border: 1px solid #eee;
+        }
+
+        .char-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            background: #fff;
+            border: 1px solid #ddd;
+            min-width: 48px;
+            position: relative;
+        }
+
+        .char-item .char {
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .char-item .unicode {
+            font-size: 0.625rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+
+        .char-item .remove {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .char-item:hover .remove {
+            opacity: 1;
+        }
+
+        .char-item .remove:hover {
+            background: #c00;
+        }
+
+        .empty-message {
+            color: #aaa;
+            font-size: 0.875rem;
+            width: 100%;
+            text-align: center;
+            padding: 2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .empty-message:hover {
+            color: #666;
+        }
+
+        /* Output Section */
+        .output-section {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row label {
+            font-size: 0.875rem;
+            min-width: 100px;
+        }
+
+        .form-row input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            font-size: 0.875rem;
+        }
+
+        .form-row input:focus {
+            outline: none;
+            border-color: #222;
+        }
+
+        .stats {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: #fff;
+            padding: 1.5rem;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .modal h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #222;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>CustomFilter Plist Maker</h1>
+
+        <div class="actions">
+            <button id="loadPlistBtn" class="secondary">既存plistを読み込む</button>
+            <button id="addFilterBtn" class="secondary">新しいフィルタを追加</button>
+            <button id="clearAllBtn" class="secondary">すべてクリア</button>
+        </div>
+
+        <input type="file" id="plistInput" accept=".plist" class="hidden">
+        <input type="file" id="txtInput" accept=".txt" class="hidden">
+
+        <!-- Filter List Section -->
+        <div class="section">
+            <h2>フィルタ一覧</h2>
+            <div id="filterList" class="filter-list">
+                <div class="filter-list-empty">フィルタがありません。「新しいフィルタを追加」または「既存plistを読み込む」を選択してください。</div>
+            </div>
+        </div>
+
+        <!-- Character Section (shown when a filter is selected) -->
+        <div id="charSection" class="char-section hidden">
+            <div class="char-section-header">
+                <div class="char-section-title">選択中のフィルタ: <span id="selectedFilterName">-</span></div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="addCharsBtn" class="small">文字を追加</button>
+                    <button id="sortByUnicodeBtn" class="secondary small">Unicode順でソート</button>
+                </div>
+            </div>
+
+            <div id="inputSection" class="input-section hidden">
+                <div id="dropZone" class="drop-zone">
+                    <p>テキストファイルをドロップ、またはクリックして選択</p>
+                    <small>.txtファイル対応</small>
+                </div>
+                <textarea id="charInput" placeholder="ここに文字を入力またはペースト..."></textarea>
+                <div class="input-row">
+                    <button id="addFromTextBtn">追加</button>
+                    <button id="cancelInputBtn" class="secondary">キャンセル</button>
+                </div>
+            </div>
+
+            <div id="charGrid" class="char-grid">
+                <div class="empty-message">文字がありません</div>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-section section">
+            <h2>出力設定</h2>
+            <div class="form-row">
+                <label>ファイル名:</label>
+                <input type="text" id="outputFileName" placeholder="フィルタ名" value="CustomFilter">
+            </div>
+            <div class="stats">
+                フィルタ数: <span id="filterCount">0</span> / 合計文字数: <span id="totalCharCount">0</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="downloadAllBtn" disabled>すべてを1つのplistとしてダウンロード</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div id="renameModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3>フィルタ名を変更</h3>
+            <input type="text" id="renameInput" placeholder="フィルタ名">
+            <div class="modal-actions">
+                <button id="renameCancelBtn" class="secondary">キャンセル</button>
+                <button id="renameConfirmBtn">変更</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let filters = [];
+        let selectedFilterId = null;
+        let currentFileName = 'CustomFilter';
+        let draggedFilterId = null;
+
+        // Generate unique ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // DOM Elements
+        const loadPlistBtn = document.getElementById('loadPlistBtn');
+        const addFilterBtn = document.getElementById('addFilterBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const plistInput = document.getElementById('plistInput');
+        const txtInput = document.getElementById('txtInput');
+        const filterList = document.getElementById('filterList');
+        const charSection = document.getElementById('charSection');
+        const selectedFilterName = document.getElementById('selectedFilterName');
+        const sortByUnicodeBtn = document.getElementById('sortByUnicodeBtn');
+        const addCharsBtn = document.getElementById('addCharsBtn');
+        const inputSection = document.getElementById('inputSection');
+        const dropZone = document.getElementById('dropZone');
+        const charInput = document.getElementById('charInput');
+        const addFromTextBtn = document.getElementById('addFromTextBtn');
+        const cancelInputBtn = document.getElementById('cancelInputBtn');
+        const charGrid = document.getElementById('charGrid');
+        const outputFileName = document.getElementById('outputFileName');
+        const filterCount = document.getElementById('filterCount');
+        const totalCharCount = document.getElementById('totalCharCount');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const renameModal = document.getElementById('renameModal');
+        const renameInput = document.getElementById('renameInput');
+        const renameCancelBtn = document.getElementById('renameCancelBtn');
+        const renameConfirmBtn = document.getElementById('renameConfirmBtn');
+
+        let renameFilterId = null;
+
+        // Event Listeners
+        loadPlistBtn.addEventListener('click', () => plistInput.click());
+        addFilterBtn.addEventListener('click', addNewFilter);
+        clearAllBtn.addEventListener('click', clearAll);
+
+        plistInput.addEventListener('change', handlePlistFile);
+        txtInput.addEventListener('change', handleTxtFile);
+
+        addCharsBtn.addEventListener('click', () => inputSection.classList.remove('hidden'));
+        sortByUnicodeBtn.addEventListener('click', sortFilterByUnicode);
+        cancelInputBtn.addEventListener('click', () => {
+            inputSection.classList.add('hidden');
+            charInput.value = '';
+        });
+
+        dropZone.addEventListener('click', () => txtInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', handleDrop);
+
+        addFromTextBtn.addEventListener('click', () => {
+            if (selectedFilterId) {
+                addCharactersToFilter(selectedFilterId, charInput.value);
+                charInput.value = '';
+                inputSection.classList.add('hidden');
+            }
+        });
+
+        downloadAllBtn.addEventListener('click', downloadAllPlist);
+
+        renameCancelBtn.addEventListener('click', closeRenameModal);
+        renameConfirmBtn.addEventListener('click', confirmRename);
+        renameInput.addEventListener('keydown', (e) => {
+            // IME変換中のEnterは無視する（日本語入力対応）
+            if (e.key === 'Enter' && !e.isComposing) confirmRename();
+            if (e.key === 'Escape') closeRenameModal();
+        });
+
+        // Functions
+        // Convert character to glyph name (Unicode format)
+        function charToGlyphName(char) {
+            const code = char.codePointAt(0);
+            if (code > 0xFFFF) {
+                return 'u' + code.toString(16).toUpperCase();
+            }
+            return 'uni' + code.toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        // Convert glyph name to character (if possible)
+        function glyphNameToChar(glyphName) {
+            let code;
+            if (glyphName.startsWith('uni') && glyphName.length === 7) {
+                code = parseInt(glyphName.slice(3), 16);
+                if (!isNaN(code)) return String.fromCodePoint(code);
+            } else if (glyphName.startsWith('u') && glyphName.length >= 5) {
+                code = parseInt(glyphName.slice(1), 16);
+                if (!isNaN(code)) return String.fromCodePoint(code);
+            }
+            // For non-Unicode glyph names, return null
+            return null;
+        }
+
+        // Get display text for a glyph
+        function getGlyphDisplay(glyphName) {
+            const char = glyphNameToChar(glyphName);
+            return char ? char : glyphName;
+        }
+
+        function addNewFilter() {
+            const filter = {
+                id: generateId(),
+                name: `フィルタ${filters.length + 1}`,
+                glyphs: []  // Array of glyph names (strings)
+            };
+            filters.push(filter);
+            selectFilter(filter.id);
+            renderFilterList();
+            updateStats();
+            // Open rename modal for the new filter
+            openRenameModal(filter.id);
+        }
+
+        function selectFilter(filterId) {
+            selectedFilterId = filterId;
+            const filter = filters.find(f => f.id === filterId);
+            if (filter) {
+                selectedFilterName.textContent = filter.name;
+                charSection.classList.remove('hidden');
+                renderCharGrid();
+            }
+            renderFilterList();
+        }
+
+        function deleteFilter(filterId) {
+            const filter = filters.find(f => f.id === filterId);
+            if (!filter) return;
+
+            if (!confirm(`「${filter.name}」を削除しますか？`)) return;
+
+            filters = filters.filter(f => f.id !== filterId);
+
+            if (selectedFilterId === filterId) {
+                selectedFilterId = filters.length > 0 ? filters[0].id : null;
+                if (selectedFilterId) {
+                    selectFilter(selectedFilterId);
+                } else {
+                    charSection.classList.add('hidden');
+                }
+            }
+
+            renderFilterList();
+            updateStats();
+        }
+
+        function openRenameModal(filterId) {
+            const filter = filters.find(f => f.id === filterId);
+            if (!filter) return;
+
+            renameFilterId = filterId;
+            renameInput.value = filter.name;
+            renameModal.classList.remove('hidden');
+            renameInput.focus();
+            renameInput.select();
+        }
+
+        function closeRenameModal() {
+            renameModal.classList.add('hidden');
+            renameFilterId = null;
+        }
+
+        function confirmRename() {
+            if (!renameFilterId) return;
+
+            const filter = filters.find(f => f.id === renameFilterId);
+            if (filter) {
+                filter.name = renameInput.value || 'フィルタ';
+                if (selectedFilterId === renameFilterId) {
+                    selectedFilterName.textContent = filter.name;
+                }
+
+                // 最初のフィルタの名前を変更した際、ファイル名がデフォルト値の場合は更新
+                if (filters.indexOf(filter) === 0 && outputFileName.value === 'CustomFilter') {
+                    outputFileName.value = filter.name;
+                    currentFileName = filter.name;
+                }
+
+                renderFilterList();
+            }
+            closeRenameModal();
+        }
+
+        function addCharactersToFilter(filterId, text) {
+            const filter = filters.find(f => f.id === filterId);
+            if (!filter) return;
+
+            // Convert characters to glyph names, remove duplicates within input text,
+            // and add only if not already present in filter
+            const inputGlyphs = [...text]
+                .filter(c => c.trim())
+                .map(c => charToGlyphName(c));
+            // Use Set to remove duplicates from input, then filter out existing glyphs
+            const uniqueNewGlyphs = [...new Set(inputGlyphs)]
+                .filter(g => !filter.glyphs.includes(g));
+            filter.glyphs = [...filter.glyphs, ...uniqueNewGlyphs];
+
+            if (selectedFilterId === filterId) {
+                renderCharGrid();
+            }
+            renderFilterList();
+            updateStats();
+        }
+
+        function removeGlyphFromFilter(filterId, glyphName) {
+            const filter = filters.find(f => f.id === filterId);
+            if (!filter) return;
+
+            filter.glyphs = filter.glyphs.filter(g => g !== glyphName);
+
+            if (selectedFilterId === filterId) {
+                renderCharGrid();
+            }
+            renderFilterList();
+            updateStats();
+        }
+
+        function sortFilterByUnicode() {
+            if (!selectedFilterId) return;
+
+            const filter = filters.find(f => f.id === selectedFilterId);
+            if (!filter || filter.glyphs.length === 0) return;
+
+            // Sort by Unicode code point
+            filter.glyphs.sort((a, b) => {
+                const codeA = getCodePointFromGlyphName(a);
+                const codeB = getCodePointFromGlyphName(b);
+
+                // If both have valid code points, sort by code point
+                if (codeA !== null && codeB !== null) {
+                    return codeA - codeB;
+                }
+                // Put non-Unicode glyph names at the end
+                if (codeA === null && codeB !== null) return 1;
+                if (codeA !== null && codeB === null) return -1;
+                // Both are non-Unicode, sort alphabetically
+                return a.localeCompare(b);
+            });
+
+            renderCharGrid();
+            renderFilterList();
+        }
+
+        function getCodePointFromGlyphName(glyphName) {
+            // uni0041 format (4 hex digits)
+            if (glyphName.startsWith('uni') && glyphName.length === 7) {
+                const code = parseInt(glyphName.slice(3), 16);
+                if (!isNaN(code)) return code;
+            }
+            // u10000 format (5+ hex digits for supplementary planes)
+            if (glyphName.startsWith('u') && glyphName.length >= 5) {
+                const code = parseInt(glyphName.slice(1), 16);
+                if (!isNaN(code)) return code;
+            }
+            return null;
+        }
+
+        function downloadSingleFilter(filterId) {
+            const filter = filters.find(f => f.id === filterId);
+            if (!filter || filter.glyphs.length === 0) return;
+
+            const plist = generatePlistForFilters([filter]);
+            const fileName = currentFileName && currentFileName !== 'CustomFilter'
+                ? `${currentFileName}-${filter.name}.plist`
+                : `CustomFilter ${filter.name}.plist`;
+            downloadPlist(plist, fileName);
+        }
+
+        function downloadAllPlist() {
+            if (filters.length === 0) return;
+
+            const plist = generatePlistForFilters(filters);
+            const fileName = `CustomFilter ${outputFileName.value || 'CustomFilter'}.plist`;
+            downloadPlist(plist, fileName);
+        }
+
+        function clearAll() {
+            if (filters.length > 0 && !confirm('すべてのフィルタをクリアしますか？')) {
+                return;
+            }
+            filters = [];
+            selectedFilterId = null;
+            currentFileName = 'CustomFilter';
+            outputFileName.value = 'CustomFilter';
+            charSection.classList.add('hidden');
+            inputSection.classList.add('hidden');
+            renderFilterList();
+            updateStats();
+        }
+
+        function renderFilterList() {
+            if (filters.length === 0) {
+                filterList.innerHTML = '<div class="filter-list-empty">フィルタがありません。「新しいフィルタを追加」または「既存plistを読み込む」を選択してください。</div>';
+                return;
+            }
+
+            filterList.innerHTML = filters.map(filter => `
+                <div class="filter-item ${filter.id === selectedFilterId ? 'selected' : ''}" 
+                     data-id="${filter.id}"
+                     draggable="true">
+                    <div class="filter-handle">≡</div>
+                    <div class="filter-info" onclick="selectFilter('${filter.id}')">
+                        <div class="filter-name">${escapeHtml(filter.name)}</div>
+                        <div class="filter-count">${filter.glyphs.length}文字</div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="secondary small" onclick="openRenameModal('${filter.id}')">名前変更</button>
+                        <button class="secondary small" onclick="downloadSingleFilter('${filter.id}')" ${filter.glyphs.length === 0 ? 'disabled' : ''}>書き出し</button>
+                        <button class="danger small" onclick="deleteFilter('${filter.id}')">削除</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add drag and drop listeners
+            filterList.querySelectorAll('.filter-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragleave', handleDragLeave);
+                item.addEventListener('drop', handleFilterDrop);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedFilterId = e.currentTarget.dataset.id;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            draggedFilterId = null;
+            filterList.querySelectorAll('.filter-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const item = e.currentTarget;
+            if (item.dataset.id !== draggedFilterId) {
+                item.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleFilterDrop(e) {
+            e.preventDefault();
+            const targetId = e.currentTarget.dataset.id;
+
+            if (draggedFilterId && targetId !== draggedFilterId) {
+                const draggedIndex = filters.findIndex(f => f.id === draggedFilterId);
+                const targetIndex = filters.findIndex(f => f.id === targetId);
+
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    const [draggedFilter] = filters.splice(draggedIndex, 1);
+                    filters.splice(targetIndex, 0, draggedFilter);
+                    renderFilterList();
+                }
+            }
+
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function renderCharGrid() {
+            const filter = filters.find(f => f.id === selectedFilterId);
+            if (!filter) return;
+
+            if (filter.glyphs.length === 0) {
+                charGrid.innerHTML = '<div class="empty-message" onclick="inputSection.classList.remove(\'hidden\')">文字がありません（クリックして追加）</div>';
+                return;
+            }
+
+            charGrid.innerHTML = filter.glyphs.map(glyphName => {
+                const displayText = getGlyphDisplay(glyphName);
+                const isGlyphName = glyphNameToChar(glyphName) === null;
+                return `
+                <div class="char-item">
+                    <span class="char" ${isGlyphName ? 'style="font-size: 0.75rem; word-break: break-all;"' : ''}>${escapeHtml(displayText)}</span>
+                    <span class="unicode">${escapeHtml(glyphName)}</span>
+                    <button class="remove" onclick="removeGlyphFromFilter('${selectedFilterId}', '${escapeJs(glyphName)}')">&times;</button>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const totalGlyphs = filters.reduce((sum, f) => sum + f.glyphs.length, 0);
+            filterCount.textContent = filters.length;
+            totalCharCount.textContent = totalGlyphs;
+            downloadAllBtn.disabled = filters.length === 0 || totalGlyphs === 0;
+        }
+
+        function handlePlistFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                parsePlist(event.target.result, file.name);
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function handleTxtFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (selectedFilterId) {
+                    addCharactersToFilter(selectedFilterId, event.target.result);
+                }
+                inputSection.classList.add('hidden');
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+
+            if (file.name.endsWith('.plist')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    parsePlist(event.target.result, file.name);
+                    inputSection.classList.add('hidden');
+                };
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    if (selectedFilterId) {
+                        addCharactersToFilter(selectedFilterId, event.target.result);
+                    }
+                    inputSection.classList.add('hidden');
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function parsePlist(content, filename) {
+            try {
+                // Extract filename for output
+                const name = filename.replace(/\.plist$/i, '').replace(/^CustomFilter\s*/, '');
+                if (name) {
+                    outputFileName.value = name;
+                    currentFileName = name;
+                }
+
+                // Find all dict elements
+                const dictRegex = /<dict>([\s\S]*?)<\/dict>/g;
+                let match;
+                let foundFilters = [];
+                let totalDuplicates = 0;
+
+                while ((match = dictRegex.exec(content)) !== null) {
+                    const dictContent = match[1];
+
+                    // Extract filter name
+                    const nameMatch = dictContent.match(/<key>name<\/key>\s*<string>([^<]+)<\/string>/);
+                    const filterName = nameMatch ? nameMatch[1] : `フィルタ${foundFilters.length + 1}`;
+
+                    // Extract glyph names from list (keep as-is, don't convert)
+                    const listMatch = dictContent.match(/<key>list<\/key>\s*<array>([\s\S]*?)<\/array>/);
+                    let glyphs = [];
+                    let originalCount = 0;
+
+                    if (listMatch) {
+                        const glyphStrings = listMatch[1].match(/<string>([^<]+)<\/string>/g);
+                        if (glyphStrings) {
+                            glyphs = glyphStrings
+                                .map(s => s.replace(/<\/?string>/g, ''));
+                            originalCount = glyphs.length;
+                        }
+                    }
+
+                    // Only add filters that have a list (skip predicate-based filters)
+                    if (glyphs.length > 0) {
+                        const uniqueGlyphs = [...new Set(glyphs)];
+                        const duplicateCount = originalCount - uniqueGlyphs.length;
+                        totalDuplicates += duplicateCount;
+
+                        foundFilters.push({
+                            id: generateId(),
+                            name: filterName,
+                            glyphs: glyphs,
+                            uniqueGlyphs: uniqueGlyphs,
+                            duplicateCount: duplicateCount
+                        });
+                    }
+                }
+
+                if (foundFilters.length > 0) {
+                    // If duplicates found, ask user whether to remove them
+                    let removeDuplicates = false;
+                    if (totalDuplicates > 0) {
+                        removeDuplicates = confirm(
+                            `読み込んだplistに${totalDuplicates}件の重複文字が見つかりました。\n\n` +
+                            `「OK」を押すと重複を除去します。\n` +
+                            `「キャンセル」を押すと重複をそのまま維持します。`
+                        );
+                    }
+
+                    // Apply the user's choice
+                    foundFilters.forEach(filter => {
+                        filter.glyphs = removeDuplicates ? filter.uniqueGlyphs : filter.glyphs;
+                        delete filter.uniqueGlyphs;
+                        delete filter.duplicateCount;
+                    });
+
+                    filters = [...filters, ...foundFilters];
+                    selectFilter(foundFilters[0].id);
+                    renderFilterList();
+                    updateStats();
+                }
+            } catch (error) {
+                alert('plistファイルの解析に失敗しました: ' + error.message);
+            }
+        }
+
+        function generatePlistForFilters(filterArray) {
+            const dictElements = filterArray.map(filter => {
+                const listItems = filter.glyphs.map(g => `\t\t\t<string>${escapeXml(g)}</string>`).join('\n');
+
+                return `\t<dict>
+\t\t<key>name</key>
+\t\t<string>${escapeXml(filter.name)}</string>
+\t\t<key>list</key>
+\t\t<array>
+${listItems}
+\t\t</array>
+\t</dict>`;
+            }).join('\n');
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+${dictElements}
+</array>
+</plist>`;
+        }
+
+        function downloadPlist(content, filename) {
+            const blob = new Blob([content], { type: 'application/x-plist' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function escapeJs(str) {
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
+
+        function escapeXml(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        // Initialize
+        renderFilterList();
+        updateStats();
+    </script>
+
+    <footer
+        style="text-align: center; padding: 2rem 1rem; margin-top: 2rem; border-top: 1px solid #ddd; color: #888; font-size: 0.75rem;">
+        <p><a href="README.md" style="color: #666; text-decoration: none;"> README </a> | <a href="LICENSE"
+                style="color: #666; text-decoration: none;"> LICENSE </a> | <a
+                href="https://github.com/toktaro/CustomFilter-Plist-Maker" style="color: #666; text-decoration: none;">
+                GitHub </a></p>
+        <p style="margin-top: 0.5rem;">© 2026- toktaro — Licensed under GPL v3.</p>
+    </footer>
+</body>
+
+</html>
