@@ -6,6 +6,12 @@ Glyphs3のカスタムフィルタ（CustomFilter）用plistファイルを作�
 
 ![Screenshot](screenshot.png)
 
+## Live Demo
+
+[https://toktaro.github.io/CustomFilter-Plist-Maker/](https://toktaro.github.io/CustomFilter-Plist-Maker/)
+
+
+
 ## 機能
 
 - **複数フィルタ対応**: 1つのplistに複数のフィルタを含めて管理
