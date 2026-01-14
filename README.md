@@ -6,6 +6,10 @@ A browser-based tool for creating and editing plist files for Glyphs3 CustomFilt
 
 ![Screenshot](screenshot.png)
 
+## Live Demo
+
+[https://toktaro.github.io/CustomFilter-Plist-Maker/](https://toktaro.github.io/CustomFilter-Plist-Maker/)
+
 ## Features
 
 - **Multiple Filters**: Manage multiple filters in a single plist file
